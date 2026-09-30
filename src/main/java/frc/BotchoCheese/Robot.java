@@ -127,6 +127,7 @@ public class Robot extends TimedRobot {
 
     publishMatchData();
     publishDashboardData();
+    m_robotContainer.updateRangedShotDashboard();
 
     if (kUseLimelight) {
       LimelightHomography.update(RobotContainer.drivetrain);

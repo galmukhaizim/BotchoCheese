@@ -58,4 +58,7 @@ public class RobotMap {
     // CANivore bus name for drivetrain hardware and CANdle device ID.
     public static final String CANIVORE_CAN_BUS = "1515Canivore";
     public static final int CANDLE_CAN_ID = 40;
+
+    // CANrange time-of-flight sensor aimed at the hub (roboRIO CAN bus).
+    public static final int RANGE_SENSOR_CAN_ID = 41;
 }

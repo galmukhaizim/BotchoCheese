@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.BotchoCheese.Commands.RangedShot;
 import frc.BotchoCheese.Constants.RobotMap;
 import frc.BotchoCheese.Constants.TunerConstants;
 import frc.BotchoCheese.Subsystems.CommandSwerveDrivetrain;
@@ -33,6 +34,7 @@ import frc.BotchoCheese.Subsystems.Feeder;
 import frc.BotchoCheese.Subsystems.Indexer;
 import frc.BotchoCheese.Subsystems.Intake;
 import frc.BotchoCheese.Subsystems.Pivot;
+import frc.BotchoCheese.Subsystems.RangeSensor;
 import frc.BotchoCheese.Subsystems.Shooter;
 import frc.BotchoCheese.Utils.DebugLog;
 
@@ -80,6 +82,12 @@ public class RobotContainer {
     public final Intake intake = new Intake();
     public final Indexer indexer = new Indexer();
     public final Pivot pivot = new Pivot();
+    public final RangeSensor rangeSensor = new RangeSensor();
+
+    // Physics-solved shot: flywheel speed from the range sensor's distance to the hub.
+    private final RangedShot rangedShot = new RangedShot(
+        shooter, rangeSensor, intake, indexer, feeder,
+        SHOOT_INTAKE_DUTY, SHOOT_INDEXER_DUTY, SHOOT_FEEDER_DUTY);
 
     // Default driver request is field-centric open-loop drive.
     public static final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -127,6 +135,8 @@ public class RobotContainer {
                 )
             ).withTimeout(3.0)
         );
+        // Same flow as "Shoot" but the RPS comes from the range sensor (falls back to 90 RPS without a reading).
+        NamedCommands.registerCommand("ShootRanged", rangedShot.command().withTimeout(3.0));
         NamedCommands.registerCommand(
             "ShootFirstWithPivotDown",
             Commands.deadline(
@@ -284,6 +294,9 @@ public class RobotContainer {
             shooter.shootRps(this::getXShotBackRps, this::getXShotFrontRps)
         );
 
+        // Ranged shot: flywheel speed solved from the range sensor's distance to the hub.
+        JOYSTICK2_CONTROLLER.leftBumper().toggleOnTrue(rangedShot.command());
+
         // Lob shot (back, front)
         JOYSTICK2_CONTROLLER.y().toggleOnTrue(
             Commands.sequence(
@@ -335,6 +348,11 @@ public class RobotContainer {
             );
             return Commands.none();
         }
+    }
+
+    public void updateRangedShotDashboard() {
+        // Keeps RangedShot/* live so the drive team can see the solved shot before pressing the button.
+        rangedShot.update();
     }
 
     public void updateAutoSelectionDashboard() {

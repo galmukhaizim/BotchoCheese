@@ -43,6 +43,8 @@ Auto wrappers:
 - Middle auto: `Middle` -> `Shoot` -> `Middle alliance balls`
 - Right auto: `Right side` -> `Shoot`
 
+`ShootRanged` is also registered: same 3 s flow as `Shoot`, but the flywheel RPS is solved from the CANrange distance to the hub (see "Ranged Shot Physics" in the top-level README). It falls back to the fixed 90 RPS when the sensor has no valid reading, so swapping it in for `Shoot` is safe once the sensor is mounted and calibrated.
+
 ## Editing Rules
 
 1. If you move any shoot anchor, update all paths that reference that shoot location.

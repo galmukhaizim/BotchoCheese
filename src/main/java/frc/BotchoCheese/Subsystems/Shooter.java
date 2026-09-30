@@ -41,6 +41,8 @@ public class Shooter extends SubsystemBase {
     private final TalonFX frontShooter;
     private double backTargetRps = 0.0;
     private double frontTargetRps = 0.0;
+    private double backActualRps = 0.0;
+    private double frontActualRps = 0.0;
 
     public Shooter() {
         backLeftShooter = new TalonFX(RobotMap.BACK_LEFT_SHOOTER_MOTOR_ID);
@@ -95,10 +97,7 @@ public class Shooter extends SubsystemBase {
                 double frontRps = rpsValues.length > 1 ? rpsValues[1] : backRps;
                 setShooterSpeeds(backRps, frontRps);
             },
-            () -> {
-                backLeftShooter.stopMotor();
-                frontShooter.stopMotor();
-            }
+            this::stopShooter
         );
     }
 
@@ -110,21 +109,34 @@ public class Shooter extends SubsystemBase {
         frontShooter.setControl(shooterVelocityRequest.withVelocity(frontShooterTargetRps));
     }
 
+    private void stopShooter() {
+        // Zero the targets too so isAtTargetSpeed() and the dashboard error never compare against a stale command.
+        backTargetRps = 0.0;
+        frontTargetRps = 0.0;
+        backLeftShooter.stopMotor();
+        frontShooter.stopMotor();
+    }
+
     public Command shootRps(DoubleSupplier backRpsSupplier, DoubleSupplier frontRpsSupplier) {
         return this.runEnd(
             () -> setShooterSpeeds(backRpsSupplier.getAsDouble(), frontRpsSupplier.getAsDouble()),
-            () -> {
-                backLeftShooter.stopMotor();
-                frontShooter.stopMotor();
-            }
+            this::stopShooter
         );
+    }
+
+    /** True when both wheels are spinning within tolerance of a non-zero target. */
+    public boolean isAtTargetSpeed(double toleranceRps) {
+        boolean commanded = backTargetRps != 0.0 || frontTargetRps != 0.0;
+        return commanded
+            && Math.abs(backTargetRps - backActualRps) <= toleranceRps
+            && Math.abs(frontTargetRps - frontActualRps) <= toleranceRps;
     }
 
     @Override
     public void periodic() {
         // Phoenix velocity units are rotations per second (RPS).
-        double backActualRps = backLeftShooter.getVelocity().getValueAsDouble();
-        double frontActualRps = frontShooter.getVelocity().getValueAsDouble();
+        backActualRps = backLeftShooter.getVelocity().getValueAsDouble();
+        frontActualRps = frontShooter.getVelocity().getValueAsDouble();
         SmartDashboard.putNumber(SHOOTER_BACK_RPS_KEY, backActualRps);
         SmartDashboard.putNumber(SHOOTER_FRONT_RPS_KEY, frontActualRps);
         SmartDashboard.putNumber(SHOOTER_BACK_TARGET_RPS_KEY, backTargetRps);
